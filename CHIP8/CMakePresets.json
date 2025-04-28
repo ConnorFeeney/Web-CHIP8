@@ -1,0 +1,32 @@
+{
+    "version": 10,
+
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 31
+    },
+
+    "configurePresets": [
+        {
+            "name": "default-debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin/debug",
+                "CMAKE_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/bin/debug",
+                "CMAKE_ARCHIVE_OUTPUT_DIRECTORY": "${sourceDir}/lib/debug"
+            }
+        }
+    ],
+
+    "buildPresets": [
+        {
+            "name": "build-debug",
+            "configurePreset": "default-debug",
+            "jobs": 4
+        }
+    ]
+}
