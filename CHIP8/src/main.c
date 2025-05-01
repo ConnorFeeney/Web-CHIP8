@@ -1,19 +1,18 @@
-#include<stdio.h>
-
-#include <raylib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <chip8.h>
 
 int main(int argc, char *argv[]){
-    InitWindow(640, 320, "CHIP-8 Emulator");
-    
-    if(!IsWindowReady()){
-        return 1;
-    }
+   CHIP8* chip8;
+   initCHIP8(&chip8);
 
-    while(!WindowShouldClose()){
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-        DrawText("Hello, CHIP-8!", 190, 140, 20, BLACK);
-        EndDrawing();
-    }
-    CloseWindow();
+   //Print ram in hexcedecimal bytes
+   for(int i = 0; i < 4096; i++){
+      printf("%02x\n", chip8->mmu->ram[i]);
+   }
+
+   getchar(); //Pause excecution
+
+   freeCHIP8(&chip8);
+   return 0;
 }
