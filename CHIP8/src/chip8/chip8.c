@@ -31,10 +31,12 @@ void initCHIP8(CHIP8** chip8) {
     (*chip8)->cpu = cpu;
     (*chip8)->mmu = mmu;
 
-    bufferMMU((*chip8)->mmu, fontset, 0, sizeof(fontset)); //Buffer font to memory
+    bufferRAM((*chip8)->mmu, fontset, 0, sizeof(fontset)); //Buffer font to memory
 }
 
 void freeCHIP8(CHIP8** chip8) {
+    if(chip8 == NULL || *chip8 == NULL) return;
+
     freeMMU(&(*chip8)->mmu);
     freeCPU(&(*chip8)->cpu);
 
@@ -74,7 +76,7 @@ void loadROM(CHIP8* chip8, const char* rom) {
     fread(buffer, sizeof(uint8_t), fileSize, fileptr);
 
     //Buffer ROM to virtual RAM
-    bufferMMU(chip8->mmu, buffer, 0x200, bufferSize);
+    bufferRAM(chip8->mmu, buffer, 0x200, bufferSize);
 
     //Free temp buffer and fileptr
     fclose(fileptr);

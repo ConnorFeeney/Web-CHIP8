@@ -6,10 +6,11 @@ int main(int argc, char *argv[]){
    CHIP8* chip8;
    initCHIP8(&chip8);
 
-   //Print ram in hexcedecimal bytes
-   for(int i = 0; i < 4096; i++){
-      printf("%02x\n", chip8->mmu->ram[i]);
-   }
+   loadROM(chip8, "./spacejam.ch8");
+   hexDumpMMU(chip8->mmu);
+
+   printf("\n\n");
+   cycle(chip8->cpu);
 
    getchar(); //Pause excecution
 
