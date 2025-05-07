@@ -5,9 +5,6 @@ param(
     [Parameter(Mandatory = $true, HelpMessage = "Provide CMake Build Preset")]
     [string]$buildPreset,
 
-    [Parameter(Mandatory = $false, HelpMessage = "Build Tests")]
-    [switch]$builtTest,
-
     [Parameter(Mandatory = $false, HelpMessage = "Dont Update Dependencies")]
     [switch]$noupdate = $false,
 

@@ -19,17 +19,20 @@ static const uint8_t fontset[80] = {
 	0xF0, 0x80, 0xF0, 0x80, 0x80		// F
 };
 
-void initCHIP8(CHIP8** chip8) {
+void initCHIP8(CHIP8** chip8, uint8_t renderScale) {
     *chip8 = (CHIP8*)malloc(sizeof(CHIP8));
 
     MMU* mmu;
     CPU* cpu;
+    Display* display;
 
-    initMMU(&mmu);
+    initMMU(&mmu, 4096, 64, 32);
     initCPU(&cpu, mmu);
+    initDisplay(&display, mmu, 64, 32, renderScale);
 
     (*chip8)->cpu = cpu;
     (*chip8)->mmu = mmu;
+    (*chip8)->display = display;
 
     bufferRAM((*chip8)->mmu, fontset, 0, sizeof(fontset)); //Buffer font to memory
 }
@@ -39,6 +42,7 @@ void freeCHIP8(CHIP8** chip8) {
 
     freeMMU(&(*chip8)->mmu);
     freeCPU(&(*chip8)->cpu);
+    freeDisplay(&(*chip8)->display);
 
     free(*chip8);
     *chip8 = NULL;
@@ -81,4 +85,8 @@ void loadROM(CHIP8* chip8, const char* rom) {
     //Free temp buffer and fileptr
     fclose(fileptr);
     free(buffer);
+}
+
+void runCHIP8(CHIP8* chip8) {
+    
 }

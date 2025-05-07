@@ -1,5 +1,24 @@
 #include <cpu.h>
 
+uint8_t keyboard[0xF + 1] = {
+    (uint8_t)KEY_ONE,
+    (uint8_t)KEY_TWO,
+    (uint8_t)KEY_THREE,
+    (uint8_t)KEY_FOUR,
+    (uint8_t)KEY_Q,
+    (uint8_t)KEY_W,
+    (uint8_t)KEY_E,
+    (uint8_t)KEY_R,
+    (uint8_t)KEY_A,
+    (uint8_t)KEY_S,
+    (uint8_t)KEY_D,
+    (uint8_t)KEY_F,
+    (uint8_t)KEY_Z,
+    (uint8_t)KEY_X,
+    (uint8_t)KEY_C,
+    (uint8_t)KEY_V
+};
+
 opcode table[0xF + 1];
 opcode table0[0xE + 1];
 opcode table8[0xE + 1];
@@ -179,12 +198,11 @@ void op8XY5(CPU* cpu) {
 
 void op8XY6(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
-    uint8_t y = (cpu->opCode & 0x00F0) >> 4;
-
-    cpu->v[x] = cpu->v[y];
-    
-    cpu->vF = (cpu->v[x] & 0x1);
-
+    if((cpu->v[x] & 0x1) == 1){
+        cpu->vF = 1;
+    } else {
+        cpu->vF = 0;
+    }
     cpu->v[x] >>= 1;
 }
 
@@ -203,11 +221,11 @@ void op8XY7(CPU* cpu) {
 
 void op8XYE(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
-    uint8_t y = (cpu->opCode & 0x00F0) >> 4;
-
-    cpu->v[x] = cpu->v[y];
-    
-    cpu->vF = (cpu->v[x] & 0x80);
+    if(((cpu->v[x] & 0x80) >> 7) == 1) {
+        cpu->vF = 1;
+    } else {
+        cpu->vF = 0;
+    }
 
     cpu->v[x] <<= 1;
 }
@@ -233,14 +251,14 @@ void opBNNN(CPU* cpu) {
     cpu->pc = address;
 }
 
-void CXNN(CPU* cpu) {
+void opCXNN(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
     uint8_t val = (cpu->opCode & 0x00FF);
     uint8_t r = rand() % 256;
     cpu->v[x] = (r & val);
 }
 
-void DXYN(CPU* cpu) {
+void opDXYN(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
     uint8_t y = (cpu->opCode & 0x00F0) >> 4;
 
@@ -257,5 +275,90 @@ void DXYN(CPU* cpu) {
                 setVRAM(cpu->mmu, pixel, xPos + col, yPos + row);
             }
         }
+    }
+}
+
+// ==== Table E ====
+
+void opEX9E(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 4;
+    if(IsKeyPressed(keyboard[cpu->v[x]])) {
+        cpu->pc += 2;
+    }
+}
+
+void opEXA1(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 4;
+    if(!IsKeyDown(keyboard[cpu->v[x]])) {
+        cpu->pc += 2;
+    }
+}
+
+// ==== Table F ====
+
+void opFX07(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
+    cpu->v[x] = cpu->dt;
+}
+
+void opFX0A(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
+
+    int keypressed = 0;
+    while(!keypressed) {
+        for(uint8_t i = 0; i < 0xF + 1; i++) {
+            if(IsKeyPressed(keyboard[i])) {
+                keypressed = 1;
+                cpu->v[x] = i;
+                break;
+            }
+        }
+    }
+}
+
+void opFX15(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
+    cpu->dt = cpu->v[x];
+}
+
+void opFX18(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
+    cpu->st = cpu->v[x];
+}
+
+void opFX1E(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
+    cpu->I += cpu->v[x];
+}
+
+void opFX29(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
+    cpu->I = (cpu->v[x] & 0x0F);
+}
+
+void opFX33(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
+    uint8_t val = cpu->v[x];
+
+    int i = 2;
+    for(int j = 0; j < 3; j++, i--) {
+        cpu->mmu->ram[cpu->I + i] = val % 10;
+        val /= 10;
+    }
+}
+
+void opFX55(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
+    for(int i = 0; i <= x; i++) {
+        cpu->I += i;
+        cpu->v[i] = cpu->mmu->ram[cpu->I];
+    }
+}
+
+void opFX65(CPU* cpu) {
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
+    for(int i = 0; i <= x; i++) {
+        cpu->I += i;
+        cpu->mmu->ram[cpu->I] = cpu->v[i];
     }
 }

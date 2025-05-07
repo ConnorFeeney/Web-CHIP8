@@ -1,29 +1,27 @@
 #include <mmu.h>
 
-void initMMU(MMU** mmu) {
+void initMMU(MMU** mmu, size_t ramSize, size_t vramWidth, size_t vramHeight) {
     *mmu = (MMU*)malloc(sizeof(MMU));
-    //Setup RAM
-    size_t ramSize = 4096;
-    size_t vramSize = 64 * 32;
 
     void* raw = (void*)malloc(sizeof(uint8_t) * ramSize + sizeof(size_t)); //Get memory block
     ((size_t*)raw)[0] = ramSize; //Hide ram size
     (*mmu)->ram = (uint8_t*)((size_t*)raw + 1); //Compute shifted pointer
     memset((*mmu)->ram, 0, ramSize); //Zero memory
 
-    void* vramRaw = (void*)malloc(sizeof(uint8_t) * ramSize + sizeof(size_t));
-    ((size_t*)vramRaw)[0] = vramSize;
-    (*mmu)->vram = (uint8_t*)((size_t*)vramRaw + 1);
-    memset((*mmu)->vram, 0, vramSize);
+    void* vramRaw = (void*)malloc((sizeof(uint8_t) * ramSize) + (2 * sizeof(size_t)));
+    ((size_t*)vramRaw)[0] = vramWidth;
+    ((size_t*)vramRaw)[1] = vramHeight;
+    (*mmu)->vram = (uint8_t*)((size_t*)vramRaw + 2);
+    memset((*mmu)->vram, 0, vramWidth * vramHeight);
 }
 
 void freeMMU(MMU** mmu) {
-    if(mmu == NULL || *mmu == NULL);
+    if(!mmu || !(*mmu)) return;
 
     free((void*)((size_t*)(*mmu)->ram - 1)); //Free ram (meta-data included)
     (*mmu)->ram = NULL;
 
-    free((void*)((size_t*)(*mmu)->vram - 1)); //Free vram (meta-data included)
+    free((void*)((size_t*)(*mmu)->vram - 2)); //Free vram (meta-data included)
     (*mmu)->vram = NULL;
 
     free(*mmu);
@@ -63,8 +61,9 @@ void clearRAM(MMU* mmu) {
 void setVRAM(MMU* mmu, const uint8_t data, size_t x, size_t y) {
     if(!mmu || !mmu->vram) return;
 
-    size_t vramSize = *((size_t*)mmu->vram - 1);
-    if(vramSize < x * y) return;
+    size_t vramWidth = *((size_t*)mmu->vram - 2);
+    size_t vramHeight = *((size_t*)mmu->vram - 1);
+    if(vramWidth * vramHeight < x * y) return;
 
     mmu->vram[(y * 64) + x] = data;
 }
@@ -72,8 +71,9 @@ void setVRAM(MMU* mmu, const uint8_t data, size_t x, size_t y) {
 void clearVRAM(MMU* mmu) {
     if(!mmu || !mmu->vram) return;
 
-    size_t vramSize = *((size_t*)mmu->vram - 1);
-    memset(mmu->vram, 0, vramSize);
+    size_t vramWidth = *((size_t*)mmu->vram - 2);
+    size_t vramHeight = *((size_t*)mmu->vram - 1);
+    memset(mmu->vram, 0, vramWidth * vramHeight);
 }
 
 void hexDumpMMU(MMU* mmu) {
@@ -96,7 +96,9 @@ void hexDumpMMU(MMU* mmu) {
 
     //Dum VRAM
     printf("\n\nVRAM DUMP (HEX): \n");
-    size_t vramSize = *((size_t*)mmu->vram - 1);
+    size_t vramWidth = *((size_t*)mmu->vram - 2);
+    size_t vramHeight = *((size_t*)mmu->vram - 1);
+    size_t vramSize = vramWidth * vramHeight;
     for (int i = 0; i < vramSize; i++) {
         uint8_t val = mmu->vram[i];
         uint8_t prev = (i > 0) ? mmu->vram[i - 1] : 0;

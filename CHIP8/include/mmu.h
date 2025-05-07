@@ -11,7 +11,7 @@ typedef struct {
     uint8_t* vram; //64x32 byte VRAM
 } MMU;
 
-extern void initMMU(MMU** mmu);
+extern void initMMU(MMU** mmu, size_t ramSize, size_t vramWidth, size_t vramHeight);
 extern void freeMMU(MMU** mmu);
 
 extern void bufferRAM(MMU* mmu, const uint8_t* data, size_t offset, size_t size);

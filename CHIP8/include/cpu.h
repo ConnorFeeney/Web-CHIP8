@@ -5,8 +5,11 @@
 #include <time.h>
 #include <stdint.h>
 #include <string.h>
+#include <raylib.h>
 
 #include <mmu.h>
+
+extern uint8_t keyboard[0xF + 1];
 
 typedef struct {
     uint8_t v[16]; //Vx register
