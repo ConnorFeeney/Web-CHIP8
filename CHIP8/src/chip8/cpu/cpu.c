@@ -32,7 +32,7 @@ void initCPU(CPU** cpu, MMU* mmu) {
 
     //0 out flags and registries
     (*cpu)->I = 0;
-    (*cpu)->vF = 0;
+    (*cpu)->v[0xF] = 0;
 
     (*cpu)->dt = 0;
     (*cpu)->st = 0;
@@ -40,8 +40,68 @@ void initCPU(CPU** cpu, MMU* mmu) {
     (*cpu)->pc = 0x200; //Programs start at 0x200
     (*cpu)->sp = 0;
 
+    (*cpu)->waitForKey = 0;
+
     memset((*cpu)->v, 0, sizeof((*cpu)->v));
     memset((*cpu)->stack, 0, sizeof((*cpu)->stack));
+
+    for(int i = 0; i <= 0xF; i++) {
+        table[i] = opNULL;
+    }
+
+    for(int i = 0; i <= 0xE; i++) {
+        table0[i] = opNULL;
+        table8[i] = opNULL;
+        tableE[i] = opNULL;
+    }
+
+    for(int i = 0; i <= 0x65; i++) {
+        tableF[i] = opNULL;
+    }
+
+    table[0x0] = Table0;
+    table0[0x0] = op00E0;
+    table0[0xE] = op00EE;
+
+    table[0x1] = op1NNN;
+    table[0x2] = op2NNN;
+    table[0x3] = op3XNN;
+    table[0x4] = op4XNN;
+    table[0x5] = op5XY0;
+    table[0x6] = op6XNN;
+    table[0x7] = op7XNN;
+
+    table[0x8] = Table8;
+    table8[0x0] = op8XY0;
+    table8[0x1] = op8XY1;
+    table8[0x2] = op8XY2;
+    table8[0x3] = op8XY3;
+    table8[0x4] = op8XY4;
+    table8[0x5] = op8XY5;
+    table8[0x6] = op8XY6;
+    table8[0x7] = op8XY7;
+    table8[0xE] = op8XYE;
+
+    table[0x9] = op9XY0;
+    table[0xA] = opANNN;
+    table[0xB] = opBNNN;
+    table[0xC] = opCXNN;
+    table[0xD] = opDXYN;
+
+    table[0xE] = TableE;
+    tableE[0x1] = opEXA1;
+    tableE[0xE] = opEX9E;
+
+    table[0xF] = TableF;
+    tableF[0x07] = opFX07;
+    tableF[0x0A] = opFX0A;
+    tableF[0x15] = opFX15;
+    tableF[0x18] = opFX18;
+    tableF[0x1E] = opFX1E;
+    tableF[0x29] = opFX29;
+    tableF[0x33] = opFX33;
+    tableF[0x55] = opFX55;
+    tableF[0x65] = opFX65;
 
     srand(time(NULL));
 }
@@ -63,11 +123,35 @@ static void fetchOpCode(CPU* cpu) {
 }
 
 void cycle(CPU* cpu) {
+    if(cpu->waitForKey) {
+        for(uint8_t i = 0; i <= 0xF; i++) {
+            if(IsKeyPressed(keyboard[i])) {
+                cpu->v[cpu->waitRegister] = i;
+                cpu->waitForKey = 0;
+                break;
+            }
+        }
+    }
+    
+    if(cpu->waitForKey) return;
+
     fetchOpCode(cpu);
-    printf("%04x\n", cpu->opCode);
+
+    printf("OPCODE: %04x\n", cpu->opCode);
+    uint8_t hi = (cpu->opCode & 0xF000) >> 12;
+    printf("Table: %02x\n", hi);
+    table[hi](cpu);
+}
+
+void opNULL(CPU* cpu) {
+    printf("NULL OPCODE\n");
 }
 
 // ==== Table 0 ====
+void Table0(CPU* cpu) {
+    uint8_t lo = cpu->opCode & 0x000F;
+    table0[lo](cpu);
+}
 
 void op00E0(CPU* cpu) {
     clearVRAM(cpu->mmu);
@@ -135,13 +219,17 @@ void op7XNN(CPU* cpu) {
 }
 
 // ==== Table 8 ====
+void Table8(CPU* cpu) {
+    uint8_t lo = cpu->opCode & 0x000F;
+    table8[lo](cpu);
+}
 
 void op8XY0(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
     uint8_t y = (cpu->opCode & 0x00F0) >> 4;
 
     cpu->v[x] = cpu->v[y];
-    cpu->vF = 0;
+    cpu->v[0xF] = 0;
 }
 
 void op8XY1(CPU* cpu) {
@@ -149,7 +237,7 @@ void op8XY1(CPU* cpu) {
     uint8_t y = (cpu->opCode & 0x00F0) >> 4;
 
     cpu->v[x] |= cpu->v[y];
-    cpu->vF = 0;
+    cpu->v[0xF] = 0;
 }
 
 void op8XY2(CPU* cpu) {
@@ -157,7 +245,7 @@ void op8XY2(CPU* cpu) {
     uint8_t y = (cpu->opCode & 0x00F0) >> 4;
 
     cpu->v[x] &= cpu->v[y];
-    cpu->vF = 0;
+    cpu->v[0xF] = 0;
 }
 
 void op8XY3(CPU* cpu) {
@@ -165,7 +253,7 @@ void op8XY3(CPU* cpu) {
     uint8_t y = (cpu->opCode & 0x00F0) >> 4;
 
     cpu->v[x] ^= cpu->v[y];
-    cpu->vF = 0;
+    cpu->v[0xF] = 0;
 }
 
 void op8XY4(CPU* cpu) {
@@ -175,9 +263,9 @@ void op8XY4(CPU* cpu) {
     uint16_t sum = cpu->v[x] + cpu->v[y];
 
     if(sum > 255) {
-        cpu->vF = 1;
+        cpu->v[0xF] = 1;
     } else {
-        cpu->vF = 0;
+        cpu->v[0xF] = 0;
     }
 
     cpu->v[x] = sum & 0xFF;
@@ -188,9 +276,9 @@ void op8XY5(CPU* cpu) {
     uint8_t y = (cpu->opCode & 0x00F0) >> 4;
 
     if(cpu->v[x] > cpu->v[y]) {
-        cpu->vF = 1;
+        cpu->v[0xF] = 1;
     } else {
-        cpu->vF = 0;
+        cpu->v[0xF] = 0;
     }
 
     cpu->v[x] -= cpu->v[y];
@@ -199,9 +287,9 @@ void op8XY5(CPU* cpu) {
 void op8XY6(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
     if((cpu->v[x] & 0x1) == 1){
-        cpu->vF = 1;
+        cpu->v[0xF] = 1;
     } else {
-        cpu->vF = 0;
+        cpu->v[0xF] = 0;
     }
     cpu->v[x] >>= 1;
 }
@@ -211,9 +299,9 @@ void op8XY7(CPU* cpu) {
     uint8_t y = (cpu->opCode & 0x00F0) >> 4;
 
     if(cpu->v[y] > cpu->v[x]) {
-        cpu->vF = 1;
+        cpu->v[0xF] = 1;
     } else {
-        cpu->vF = 0;
+        cpu->v[0xF] = 0;
     }
 
     cpu->v[x] = cpu->v[y] - cpu->v[x];
@@ -222,9 +310,9 @@ void op8XY7(CPU* cpu) {
 void op8XYE(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
     if(((cpu->v[x] & 0x80) >> 7) == 1) {
-        cpu->vF = 1;
+        cpu->v[0xF] = 1;
     } else {
-        cpu->vF = 0;
+        cpu->v[0xF] = 0;
     }
 
     cpu->v[x] <<= 1;
@@ -242,12 +330,12 @@ void op9XY0(CPU* cpu) {
 }
 
 void opANNN(CPU* cpu) {
-    uint8_t address = (cpu->opCode & 0X0FFF);
+    uint16_t address = (cpu->opCode & 0X0FFF);
     cpu->I = address;
 }
 
 void opBNNN(CPU* cpu) {
-    uint8_t address = (cpu->opCode & 0X0FFF) + cpu->v[0];
+    uint16_t address = (cpu->opCode & 0X0FFF) + cpu->v[0];
     cpu->pc = address;
 }
 
@@ -272,29 +360,40 @@ void opDXYN(CPU* cpu) {
         for(int col = 0; col < 8; col ++) {
             uint8_t pixel = byte & (0x80 >> col);
             if(pixel) {
-                setVRAM(cpu->mmu, pixel, xPos + col, yPos + row);
+                if(cpu->mmu->vram[((yPos+row) * 64) % 64 +(xPos + col) % 32]) {
+                    cpu->v[0xF] = 1;
+                }
+                setVRAM(cpu->mmu, 1, (xPos + col) % 64, (yPos + row) % 32);
             }
         }
     }
 }
 
 // ==== Table E ====
+void TableE(CPU* cpu) {
+    uint8_t lo = cpu->opCode & 0x000F;
+    tableE[lo](cpu);
+}
 
 void opEX9E(CPU* cpu) {
-    uint8_t x = (cpu->opCode & 0x0F00) >> 4;
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
     if(IsKeyPressed(keyboard[cpu->v[x]])) {
         cpu->pc += 2;
     }
 }
 
 void opEXA1(CPU* cpu) {
-    uint8_t x = (cpu->opCode & 0x0F00) >> 4;
+    uint8_t x = (cpu->opCode & 0x0F00) >> 8;
     if(!IsKeyDown(keyboard[cpu->v[x]])) {
         cpu->pc += 2;
     }
 }
 
 // ==== Table F ====
+void TableF(CPU* cpu) {
+    uint8_t lo = cpu->opCode & 0x00FF;
+    tableF[lo](cpu);
+}
 
 void opFX07(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
@@ -304,16 +403,8 @@ void opFX07(CPU* cpu) {
 void opFX0A(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
 
-    int keypressed = 0;
-    while(!keypressed) {
-        for(uint8_t i = 0; i < 0xF + 1; i++) {
-            if(IsKeyPressed(keyboard[i])) {
-                keypressed = 1;
-                cpu->v[x] = i;
-                break;
-            }
-        }
-    }
+    cpu->waitForKey = true;
+    cpu->waitRegister = x;
 }
 
 void opFX15(CPU* cpu) {
@@ -349,16 +440,14 @@ void opFX33(CPU* cpu) {
 
 void opFX55(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
-    for(int i = 0; i <= x; i++) {
-        cpu->I += i;
-        cpu->v[i] = cpu->mmu->ram[cpu->I];
+    for (int i = 0; i <= x; i++) {
+        cpu->mmu->ram[cpu->I + i] = cpu->v[i];
     }
 }
 
 void opFX65(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
-    for(int i = 0; i <= x; i++) {
-        cpu->I += i;
-        cpu->mmu->ram[cpu->I] = cpu->v[i];
+    for (int i = 0; i <= x; i++) {
+        cpu->v[i] = cpu->mmu->ram[cpu->I + i];
     }
 }

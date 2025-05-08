@@ -65,7 +65,7 @@ void setVRAM(MMU* mmu, const uint8_t data, size_t x, size_t y) {
     size_t vramHeight = *((size_t*)mmu->vram - 1);
     if(vramWidth * vramHeight < x * y) return;
 
-    mmu->vram[(y * 64) + x] = data;
+    mmu->vram[(y * 64) + x] ^= data;
 }
 
 void clearVRAM(MMU* mmu) {

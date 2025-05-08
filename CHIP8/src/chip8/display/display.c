@@ -8,6 +8,7 @@ void initDisplay(Display** display, MMU* mmu, int width, int height, int scale) 
     (*display)->mmu = mmu;
 
     InitWindow(width * scale, height * scale, "CHIP8 Emu");
+    ClearBackground(WHITE);
 }
 
 void freeDisplay(Display** display) {

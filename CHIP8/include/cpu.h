@@ -14,7 +14,6 @@ extern uint8_t keyboard[0xF + 1];
 typedef struct {
     uint8_t v[16]; //Vx register
     uint16_t I; //Index register
-    uint8_t vF; //Flag register
 
     uint8_t dt; //Delay timer (60Hz)
     uint8_t st; //Sound timer (60Hz)
@@ -27,6 +26,9 @@ typedef struct {
     uint16_t opCode;
 
     MMU* mmu;
+
+    int waitForKey;
+    uint8_t waitRegister;
 } CPU;
 
 typedef void (*opcode)(CPU* cpu);
@@ -40,6 +42,8 @@ extern void initCPU(CPU** cpu, MMU* mmu);
 extern void freeCPU(CPU** cpu);
 
 extern void cycle(CPU* cpu);
+
+extern void opNULL(CPU* cpu);
 
 //Table 0
 extern void Table0(CPU* cpu);

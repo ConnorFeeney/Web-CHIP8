@@ -88,5 +88,9 @@ void loadROM(CHIP8* chip8, const char* rom) {
 }
 
 void runCHIP8(CHIP8* chip8) {
-    
+    cycle(chip8->cpu);
+}
+
+int chip8End(CHIP8* chip8) {
+    return WindowShouldClose();
 }
