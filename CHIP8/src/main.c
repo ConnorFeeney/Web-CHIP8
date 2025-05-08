@@ -9,10 +9,6 @@ int main(int argc, char *argv[]){
 
    while(!chip8End(chip8)) {
       runCHIP8(chip8);
-      printf("PC: %04x\n", chip8->cpu->pc);
-      //hexDumpMMU(chip8->mmu);
-      printf("\n\n");
-      renderBuffer(chip8->display);
    }
 
    freeCHIP8(&chip8);

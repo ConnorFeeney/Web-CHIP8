@@ -8,7 +8,6 @@ void initDisplay(Display** display, MMU* mmu, int width, int height, int scale) 
     (*display)->mmu = mmu;
 
     InitWindow(width * scale, height * scale, "CHIP8 Emu");
-    ClearBackground(WHITE);
 }
 
 void freeDisplay(Display** display) {
@@ -24,11 +23,11 @@ void renderBuffer(Display* display) {
     size_t vramHeight = *((size_t*)vram - 1);
 
     BeginDrawing();
-    ClearBackground(WHITE);
+    ClearBackground(BLACK);
     for(int row = 0; row < vramHeight; row++) {
         for(int col = 0; col < vramWidth; col++) {
             if(vram[(row * vramWidth) + col]) {
-                DrawRectangle(col * display->scale, row * display->scale, display->scale, display->scale, BLACK);
+                DrawRectangle(col * display->scale, row * display->scale, display->scale, display->scale, WHITE);
             }
         }
     }

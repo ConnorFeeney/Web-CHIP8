@@ -1,5 +1,8 @@
 #include <chip8.h>
 
+const clock_t frameTime = CLOCKS_PER_SEC / 60;
+const clock_t lastTime;
+
 static const uint8_t fontset[80] = {
 	0xF0, 0x90, 0x90, 0x90, 0xF0,		// 0
 	0x20, 0x60, 0x20, 0x20, 0x70,		// 1
@@ -33,6 +36,9 @@ void initCHIP8(CHIP8** chip8, uint8_t renderScale) {
     (*chip8)->cpu = cpu;
     (*chip8)->mmu = mmu;
     (*chip8)->display = display;
+
+    (*chip8)->frameTime = CLOCKS_PER_SEC / 60;
+    (*chip8)->lastTime = clock();
 
     bufferRAM((*chip8)->mmu, fontset, 0, sizeof(fontset)); //Buffer font to memory
 }
@@ -88,6 +94,18 @@ void loadROM(CHIP8* chip8, const char* rom) {
 }
 
 void runCHIP8(CHIP8* chip8) {
+    clock_t currentTime = clock();
+
+    if(currentTime - chip8->lastTime >= chip8->frameTime) {
+        if(chip8->cpu->dt > 0){
+            chip8->cpu->dt--;
+        }
+        if(chip8->cpu->st > 0){
+            chip8->cpu->st--;
+        }
+        renderBuffer(chip8->display);
+        chip8->lastTime = currentTime;
+    }
     cycle(chip8->cpu);
 }
 

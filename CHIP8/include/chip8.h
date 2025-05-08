@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include <time.h>
+
 #include <cpu.h>
 #include <mmu.h>
 #include <display.h>
@@ -12,6 +14,9 @@ typedef struct {
     CPU* cpu;
     MMU* mmu;
     Display* display;
+
+    clock_t frameTime;
+    clock_t lastTime;
 } CHIP8;
 
 extern void initCHIP8(CHIP8** chip8, uint8_t renderScale);

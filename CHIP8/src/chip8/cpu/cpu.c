@@ -137,9 +137,8 @@ void cycle(CPU* cpu) {
 
     fetchOpCode(cpu);
 
-    printf("OPCODE: %04x\n", cpu->opCode);
+    printf("OPCODE: %04x\nPC: %02x\n", cpu->opCode, cpu->pc);
     uint8_t hi = (cpu->opCode & 0xF000) >> 12;
-    printf("Table: %02x\n", hi);
     table[hi](cpu);
 }
 
@@ -349,21 +348,23 @@ void opCXNN(CPU* cpu) {
 void opDXYN(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
     uint8_t y = (cpu->opCode & 0x00F0) >> 4;
-
     uint8_t n = (cpu->opCode & 0x000F);
 
     uint8_t xPos = cpu->v[x];
     uint8_t yPos = cpu->v[y];
+    cpu->v[0xF] = 0;
 
     for(int row = 0; row < n; row++) {
         uint8_t byte = cpu->mmu->ram[cpu->I + row];
-        for(int col = 0; col < 8; col ++) {
-            uint8_t pixel = byte & (0x80 >> col);
-            if(pixel) {
-                if(cpu->mmu->vram[((yPos+row) * 64) % 64 +(xPos + col) % 32]) {
+        for(int col = 0; col < 8; col++) {
+            if((byte & (0x80 >> col)) != 0) {
+                size_t vramX = (xPos + col) % 64;
+                size_t vramY = (yPos + row) % 32;
+                size_t idx = vramY * 64 + vramX;
+                if(cpu->mmu->vram[idx]) {
                     cpu->v[0xF] = 1;
                 }
-                setVRAM(cpu->mmu, 1, (xPos + col) % 64, (yPos + row) % 32);
+                cpu->mmu->vram[idx] ^= 1;
             }
         }
     }
@@ -424,7 +425,7 @@ void opFX1E(CPU* cpu) {
 
 void opFX29(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
-    cpu->I = (cpu->v[x] & 0x0F);
+    cpu->I = (cpu->v[x] * 5);
 }
 
 void opFX33(CPU* cpu) {

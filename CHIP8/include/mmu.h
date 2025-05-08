@@ -15,10 +15,8 @@ extern void initMMU(MMU** mmu, size_t ramSize, size_t vramWidth, size_t vramHeig
 extern void freeMMU(MMU** mmu);
 
 extern void bufferRAM(MMU* mmu, const uint8_t* data, size_t offset, size_t size);
-extern void setRAM(MMU* mmu, const uint8_t data, size_t index);
 extern void clearRAM(MMU* mmu);
 
-extern void setVRAM(MMU* mmu, const uint8_t data, size_t x, size_t y);
 extern void clearVRAM(MMU* mmu);
 
 extern void hexDumpMMU(MMU* mmu);
