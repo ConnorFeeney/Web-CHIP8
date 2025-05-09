@@ -136,8 +136,7 @@ void cycle(CPU* cpu) {
     if(cpu->waitForKey) return;
 
     fetchOpCode(cpu);
-
-    printf("OPCODE: %04x\nPC: %02x\n", cpu->opCode, cpu->pc);
+    
     uint8_t hi = (cpu->opCode & 0xF000) >> 12;
     table[hi](cpu);
 }
@@ -341,6 +340,7 @@ void opBNNN(CPU* cpu) {
 void opCXNN(CPU* cpu) {
     uint8_t x = (cpu->opCode & 0x0F00) >> 8;
     uint8_t val = (cpu->opCode & 0x00FF);
+    srand(time(NULL));
     uint8_t r = rand() % 256;
     cpu->v[x] = (r & val);
 }
@@ -354,13 +354,16 @@ void opDXYN(CPU* cpu) {
     uint8_t yPos = cpu->v[y];
     cpu->v[0xF] = 0;
 
+    size_t vramWidth = *((size_t*)cpu->mmu->vram - 2);
+    size_t vramHeight = *((size_t*)cpu->mmu->vram - 1);
+
     for(int row = 0; row < n; row++) {
         uint8_t byte = cpu->mmu->ram[cpu->I + row];
         for(int col = 0; col < 8; col++) {
             if((byte & (0x80 >> col)) != 0) {
-                size_t vramX = (xPos + col) % 64;
-                size_t vramY = (yPos + row) % 32;
-                size_t idx = vramY * 64 + vramX;
+                size_t vramX = (xPos + col) % vramWidth;
+                size_t vramY = (yPos + row) % vramHeight;
+                size_t idx = vramY * vramWidth + vramX;
                 if(cpu->mmu->vram[idx]) {
                     cpu->v[0xF] = 1;
                 }

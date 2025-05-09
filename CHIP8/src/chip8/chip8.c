@@ -107,6 +107,10 @@ void runCHIP8(CHIP8* chip8) {
         chip8->lastTime = currentTime;
     }
     cycle(chip8->cpu);
+
+    if(IsKeyPressed(KEY_EQUAL)) {
+        hexDumpMMU(chip8->mmu);
+    }
 }
 
 int chip8End(CHIP8* chip8) {
